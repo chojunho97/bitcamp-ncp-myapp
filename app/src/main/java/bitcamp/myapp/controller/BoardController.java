@@ -37,7 +37,7 @@ public class BoardController {
 
   @Autowired private BoardService boardService;
   @Autowired private ObjectStorageService objectStorageService;
-  private String bucketName = "bitcamp-bucket13";
+  private String bucketName = "bitcamp-bucket28";
 
   @PostMapping
   public Object insert(
@@ -179,6 +179,7 @@ public class BoardController {
           .setStatus(RestStatus.SUCCESS);
     }
   }
+
 }
 
 
