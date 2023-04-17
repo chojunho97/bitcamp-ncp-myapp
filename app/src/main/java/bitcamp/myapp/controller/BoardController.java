@@ -1,5 +1,14 @@
 package bitcamp.myapp.controller;
 
+import bitcamp.myapp.service.BoardService;
+import bitcamp.myapp.service.ObjectStorageService;
+import bitcamp.myapp.vo.Board;
+import bitcamp.myapp.vo.BoardFile;
+import bitcamp.myapp.vo.Member;
+import bitcamp.util.ErrorCode;
+import bitcamp.util.RestResult;
+import bitcamp.util.RestStatus;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -13,15 +22,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import bitcamp.myapp.service.BoardService;
-import bitcamp.myapp.service.ObjectStorageService;
-import bitcamp.myapp.vo.Board;
-import bitcamp.myapp.vo.BoardFile;
-import bitcamp.myapp.vo.Member;
-import bitcamp.util.ErrorCode;
-import bitcamp.util.RestResult;
-import bitcamp.util.RestStatus;
-import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/boards")
@@ -35,16 +35,20 @@ public class BoardController {
 
   Logger log = LogManager.getLogger(getClass());
 
-  @Autowired private BoardService boardService;
-  @Autowired private ObjectStorageService objectStorageService;
-  private String bucketName = "bitcamp-bucket28";
+  @Autowired
+  private BoardService boardService;
+
+  @Autowired
+  private ObjectStorageService objectStorageService;
+
+  private String bucketName = "bitcamp-bucket13";
 
   @PostMapping
   public Object insert(
-      Board board,
-      List<MultipartFile> files,
-      HttpSession session) throws Exception{
-
+    Board board,
+    List<MultipartFile> files,
+    HttpSession session
+  ) throws Exception {
     Member loginUser = (Member) session.getAttribute("loginUser");
 
     Member writer = new Member();
@@ -53,7 +57,11 @@ public class BoardController {
 
     List<BoardFile> boardFiles = new ArrayList<>();
     for (MultipartFile file : files) {
-      String filename = objectStorageService.uploadFile(bucketName, "board/", file);
+      String filename = objectStorageService.uploadFile(
+        bucketName,
+        "board/",
+        file
+      );
       if (filename == null) {
         continue;
       }
@@ -68,8 +76,7 @@ public class BoardController {
 
     boardService.add(board);
 
-    return new RestResult()
-        .setStatus(RestStatus.SUCCESS);
+    return new RestResult().setStatus(RestStatus.SUCCESS);
   }
 
   @GetMapping
@@ -81,31 +88,29 @@ public class BoardController {
     // 이 컨버터를 사용하면 굳이 UTF-8 변환을 설정할 필요가 없다.
     // 즉 produces = "application/json;charset=UTF-8" 를 설정하지 않아도 된다.
     return new RestResult()
-        .setStatus(RestStatus.SUCCESS)
-        .setData(boardService.list(keyword));
+      .setStatus(RestStatus.SUCCESS)
+      .setData(boardService.list(keyword));
   }
 
   @GetMapping("{no}")
   public Object view(@PathVariable int no) {
     Board board = boardService.get(no);
     if (board != null) {
-      return new RestResult()
-          .setStatus(RestStatus.SUCCESS)
-          .setData(board);
+      return new RestResult().setStatus(RestStatus.SUCCESS).setData(board);
     } else {
       return new RestResult()
-          .setStatus(RestStatus.FAILURE)
-          .setErrorCode(ErrorCode.rest.NO_DATA);
+        .setStatus(RestStatus.FAILURE)
+        .setErrorCode(ErrorCode.rest.NO_DATA);
     }
   }
 
   @PutMapping("{no}")
   public Object update(
-      @PathVariable int no,
-      Board board,
-      List<MultipartFile> files,
-      HttpSession session) throws Exception {
-
+    @PathVariable int no,
+    Board board,
+    List<MultipartFile> files,
+    HttpSession session
+  ) throws Exception {
     Member loginUser = (Member) session.getAttribute("loginUser");
 
     // URL 의 번호와 요청 파라미터의 번호가 다를 경우를 방지하기 위해
@@ -115,14 +120,18 @@ public class BoardController {
     Board old = boardService.get(board.getNo());
     if (old.getWriter().getNo() != loginUser.getNo()) {
       return new RestResult()
-          .setStatus(RestStatus.FAILURE)
-          .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
-          .setData("권한이 없습니다.");
+        .setStatus(RestStatus.FAILURE)
+        .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
+        .setData("권한이 없습니다.");
     }
 
     List<BoardFile> boardFiles = new ArrayList<>();
     for (MultipartFile file : files) {
-      String filename = objectStorageService.uploadFile(bucketName, "board/", file);
+      String filename = objectStorageService.uploadFile(
+        bucketName,
+        "board/",
+        file
+      );
       if (filename == null) {
         continue;
       }
@@ -138,8 +147,7 @@ public class BoardController {
 
     boardService.update(board);
 
-    return new RestResult()
-        .setStatus(RestStatus.SUCCESS);
+    return new RestResult().setStatus(RestStatus.SUCCESS);
   }
 
   @DeleteMapping("{no}")
@@ -149,43 +157,32 @@ public class BoardController {
     Board old = boardService.get(no);
     if (old.getWriter().getNo() != loginUser.getNo()) {
       return new RestResult()
-          .setStatus(RestStatus.FAILURE)
-          .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
-          .setData("권한이 없습니다.");
+        .setStatus(RestStatus.FAILURE)
+        .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
+        .setData("권한이 없습니다.");
     }
     boardService.delete(no);
 
-    return new RestResult()
-        .setStatus(RestStatus.SUCCESS);
+    return new RestResult().setStatus(RestStatus.SUCCESS);
   }
 
   @DeleteMapping("{boardNo}/files/{fileNo}")
   public Object filedelete(
-      @PathVariable int boardNo,
-      @PathVariable int fileNo,
-      HttpSession session) {
+    @PathVariable int boardNo,
+    @PathVariable int fileNo,
+    HttpSession session
+  ) {
     Member loginUser = (Member) session.getAttribute("loginUser");
     Board old = boardService.get(boardNo);
 
     if (old.getWriter().getNo() != loginUser.getNo()) {
       return new RestResult()
-          .setStatus(RestStatus.FAILURE)
-          .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
-          .setData("권한이 없습니다.");
-
+        .setStatus(RestStatus.FAILURE)
+        .setErrorCode(ErrorCode.rest.UNAUTHORIZED)
+        .setData("권한이 없습니다.");
     } else {
       boardService.deleteFile(fileNo);
-      return new RestResult()
-          .setStatus(RestStatus.SUCCESS);
+      return new RestResult().setStatus(RestStatus.SUCCESS);
     }
   }
-
 }
-
-
-
-
-
-
-
-

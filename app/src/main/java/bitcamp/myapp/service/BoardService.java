@@ -1,8 +1,8 @@
 package bitcamp.myapp.service;
 
-import java.util.List;
 import bitcamp.myapp.vo.Board;
 import bitcamp.myapp.vo.BoardFile;
+import java.util.List;
 
 public interface BoardService {
   void add(Board board);
@@ -14,8 +14,3 @@ public interface BoardService {
   BoardFile getFile(int fileNo);
   void deleteFile(int fileNo);
 }
-
-
-
-
-
